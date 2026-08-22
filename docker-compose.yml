@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: sg-dashboard-db
+    environment:
+      POSTGRES_USER: dashboard
+      POSTGRES_PASSWORD: dashboard
+      POSTGRES_DB: energie
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

@@ -34,7 +34,7 @@ const extractAll = async () => {
     const params = new URLSearchParams({
         select: "code_insee_region,libelle_region,date_heure,consommation,thermique,nucleaire,eolien,solaire,hydraulique,bioenergies,pompage,ech_physiques",
         where: `consommation is not null and date_heure > date'${borne}'`,
-        order_by: "date_heure",
+        order_by: "date_heure,code_insee_region",
         limit: "100",
         offset: offsetCount,
     });
@@ -43,6 +43,9 @@ const extractAll = async () => {
     resultsArray.push(...myJSON.results);
 
     while (resultsArray.length < myJSON.total_count){
+        if (myJSON.results.length === 0) {
+            throw new Error("Aucune donnée supplémentaire n'a été récupérée depuis l'API externe. Vérifiez la valeur de l'offset et la limite.");
+        }
         await pause(200);
         offsetCount=offsetCount+100;
         params.set("offset", offsetCount);
@@ -66,6 +69,7 @@ try {
     const resultArray = await extractAll();
     console.log("Nombre de lignes extraites depuis l'API externe :"+resultArray.length);
     await writeData(resultArray);
+
 } catch (error){
     console.error(error);
 }

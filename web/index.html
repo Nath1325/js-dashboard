@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard énergie</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Production électrique par région</h1>
+
+  <div id="kpi"></div>
+
+  <select id="filtre-region">
+    <option value="">Toutes les régions</option>
+  </select>
+
+  <p id="legende"></p>
+  <table id="tableau">
+    <thead>
+      <tr>
+        <th data-col="libelle">Région</th>
+        <th data-col="consommation_moyenne_mw">Consommation moyenne (MW)</th>
+        <th data-col="production_moyenne_mw">Production moyenne (MW)</th>
+        <th data-col="taux_couverture">Couverture</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

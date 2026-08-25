@@ -35,7 +35,6 @@ const loadMesure = async (fileData) => {
 
 // Fonction loadProduction
 const loadProduction = async (fileData) => {
-    const FILIERES = ['thermique', 'nucleaire', 'eolien', 'solaire', 'hydraulique', 'bioenergies'];
     console.log("chargement des productions en BDD en cours...");
 
     let compteur = 0;
@@ -73,12 +72,12 @@ const toNumber = (toConvert) => {
 try {
     const fileData = JSON.parse(await readFile("data/raw/eco2mix.json", 'utf8'));
 
-    //await loadRegion(fileData);
-    //await loadMesure(fileData);
+    await loadRegion(fileData);
+    await loadMesure(fileData);
     await loadProduction(fileData);
 
 } catch (e){
-    console.log(e);
+    console.error(e);
 } finally {
     await pool.end();
 }

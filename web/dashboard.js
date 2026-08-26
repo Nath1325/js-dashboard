@@ -4,6 +4,7 @@ let donnees = [];
 let colonneTri = null;
 let sensTri = 1;
 let regionActive = '';
+let graphique = null;
 
 // GET /api/regions
 const getInfosRegions = async () => {
@@ -14,6 +15,11 @@ const getInfosRegions = async () => {
 // GET /api/kpi
 const getKpi = async (params) => {
     return callApi("/api/kpi",params);
+}
+
+// GET /api/serie
+const getSerie = async (params) => {
+    return callApi("/api/serie",params);
 }
 
 // Call API
@@ -70,6 +76,58 @@ const renderTableau = (donnees) => {
     });
 }
 
+const renderGraphique = async () => {
+    const serie = await getSerie(regionActive ? { region: regionActive } : {});
+
+    const formatHeure = new Intl.DateTimeFormat('fr-FR', {
+        weekday: 'short',
+        hour: '2-digit',
+        timeZone: 'Europe/Paris'
+    });
+
+    const labels = serie.map(p => formatHeure.format(new Date(p.heure)));
+
+    if (graphique) {
+        graphique.destroy();
+    }
+
+    graphique = new Chart(document.querySelector('#graphique'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Consommation (MW)',
+                    data: serie.map(p => p.consommation_mw),
+                    borderColor: '#c62828',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.3
+                },
+                {
+                    label: 'Production (MW)',
+                    data: serie.map(p => p.production_mw),
+                    borderColor: '#2e7d32',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { maxTicksLimit: 14 } },
+                y: { beginAtZero: true, title: { display: true, text: 'MW' } }
+            }
+        }
+    });
+};
+
+
+
 const render = () => {
     let vue = donnees;
 
@@ -109,14 +167,18 @@ const init = async () => {
         // KPI
         await renderKpi();
 
-        // Écouteur du filtre
+        // Graphique
+        await renderGraphique();
+
+        // listener du filtre
         select.addEventListener('change', async (e) => {
             regionActive = e.target.value;
             render();
             await renderKpi();
+            await renderGraphique();
         });
 
-        // Écouteur du tri
+        // listener du tri
         document.querySelector('#tableau thead').addEventListener('click', (e) => {
             const col = e.target.dataset.col;
             if (!col) return;

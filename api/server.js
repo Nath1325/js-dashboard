@@ -145,6 +145,53 @@ app.get('/api/regions', async (req, res) => {
     }
 });
 
+// Route /api/serie avec params optionnels "region" et "jours"
+// Retourne l'évolution horaire de la consommation et de la production
+app.get('/api/serie', async (req, res) => {
+    try {
+        const region = req.query.region ?? null;
+        const jours = Number(req.query.jours) || 7;
+
+        if (jours < 1 || jours > 30) {
+            return res.status(400).json({ error: 'le nombre de jours doit être entre 1 et 30' });
+        }
+
+        const result = await pool.query(`
+            WITH conso AS (
+                SELECT DATE_TRUNC('hour', date_heure) AS heure,
+                       SUM(consommation) / COUNT(DISTINCT date_heure) AS consommation_mw
+                FROM mesure
+                WHERE ($1::text IS NULL OR code_insee = $1)
+                  AND date_heure >= (SELECT MAX(date_heure) FROM mesure)
+                                    - ($2 || ' days')::interval
+                GROUP BY heure
+            ),
+            prod AS (
+                SELECT DATE_TRUNC('hour', date_heure) AS heure,
+                       SUM(valeur_mw) / COUNT(DISTINCT date_heure) AS production_mw
+                FROM production
+                WHERE ($1::text IS NULL OR code_insee = $1)
+                  AND date_heure >= (SELECT MAX(date_heure) FROM mesure)
+                                    - ($2 || ' days')::interval
+                GROUP BY heure
+            )
+            SELECT c.heure, c.consommation_mw, p.production_mw
+            FROM conso c
+            JOIN prod p ON p.heure = c.heure
+            ORDER BY c.heure
+        `, [region, jours]);
+
+        res.json(result.rows.map(row => ({
+            heure: row.heure,
+            consommation_mw: Math.round(Number(row.consommation_mw)),
+            production_mw: Math.round(Number(row.production_mw))
+        })));
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`API démarrée sur http://localhost:${PORT}`);
 });
